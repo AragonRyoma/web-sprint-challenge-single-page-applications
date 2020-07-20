@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import * as yup from "yup";
 import styled from "styled-components";
 import axios from "axios";
@@ -22,6 +22,12 @@ const PizzaForm = (props) => {
     addRequest: "",
   });
 
+  const [errors, setErrors] = useState({
+    name: "",
+  });
+
+  const [buttonValue, setButtonValue] = useState(true);
+
   const formSchema = yup.object().shape({
     name: yup
       .string()
@@ -35,6 +41,30 @@ const PizzaForm = (props) => {
     olives: yup.boolean(),
     addRequest: yup.string(),
   });
+
+  useEffect(() => {
+    formSchema.isValid(form).then((valid) => {
+      setButtonValue(!valid);
+    });
+  }, [form]);
+
+  const validateChange = (e) => {
+    //how it finds what its looking for
+    yup
+      .reach(formSchema, e.target.name)
+      //what its looking for
+      .validate(e.target.value)
+      //using the errors
+      .then((valid) => {
+        setErrors({ ...errors, [e.target.name]: "" });
+      })
+      .catch((err) => {
+        setErrors({
+          ...errors,
+          [e.target.name]: err.errors[0],
+        });
+      });
+  };
 
   const submitForm = () => {
     formSchema.validate(form).then(() => {
@@ -61,11 +91,14 @@ const PizzaForm = (props) => {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleToppings = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.checked });
+    e.persist();
+    const newFormData = {
+      ...form,
+      [e.target.name]:
+        e.target.type === "checkbox" ? e.target.checked : e.target.value,
+    };
+    validateChange(e);
+    setForm(newFormData);
   };
 
   return (
@@ -76,7 +109,7 @@ const PizzaForm = (props) => {
           submitForm();
         }}
       >
-        <label>
+        <label className="name">
           Name:
           <input
             type="text"
@@ -101,7 +134,7 @@ const PizzaForm = (props) => {
             type="checkbox"
             name="pineapple"
             value={form.pineapple}
-            onChange={handleToppings}
+            onChange={handleChange}
           ></input>
         </label>
         <label>
@@ -110,7 +143,7 @@ const PizzaForm = (props) => {
             type="checkbox"
             name="ham"
             value={form.ham}
-            onChange={handleToppings}
+            onChange={handleChange}
           ></input>
         </label>
         <label>
@@ -119,7 +152,7 @@ const PizzaForm = (props) => {
             type="checkbox"
             name="pepperoni"
             value={form.pepperoni}
-            onChange={handleToppings}
+            onChange={handleChange}
           ></input>
         </label>
         <label>
@@ -128,7 +161,7 @@ const PizzaForm = (props) => {
             type="checkbox"
             name="mushroom"
             value={form.mushroom}
-            onChange={handleToppings}
+            onChange={handleChange}
           ></input>
         </label>
         <label>
@@ -137,7 +170,7 @@ const PizzaForm = (props) => {
             type="checkbox"
             name="olives"
             value={form.olives}
-            onChange={handleToppings}
+            onChange={handleChange}
           ></input>
         </label>
         <label>
@@ -149,7 +182,8 @@ const PizzaForm = (props) => {
             onChange={handleChange}
           ></textarea>
         </label>
-        <button>Place order!</button>
+
+        <button disabled={buttonValue}>click me!</button>
       </form>
     </div>
   );
